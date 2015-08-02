@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@2.4.0">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <url>https://github.com/jamtur01/docker-jenkins-sample.git</url>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>*/master</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <submoduleCfg class="list"/>
+    <extensions/>
+  </scm>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <customWorkspace>/tmp/jenkins-buildenv/${JOB_NAME}/workspace</customWorkspace>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>#Build the image to be used for this job.
+IMAGE=$(docker build . | tail -1 | awk &apos;{ print $NF }&apos;)
+
+#Build the directory to be mounted into Docker.
+MNT=&quot;$WORKSPACE/..&quot;
+
+#Execute the build inside Docker.
+CONTAINER=$(docker run -d -v &quot;$MNT:/opt/project&quot; $IMAGE /bin/bash -c &apos;cd /opt/project/workspace &amp;&amp; rake spec&apos;)
+
+#Attach to the container so that we can see the output
+docker attach $CONTAINER
+
+#Get its exit code as soon as the container stops.
+RC=$(docker wait $CONTAINER)
+
+#Delete the container we&apos;ve just used.
+docker rm $CONTAINER
+
+#Exit with the same value as that with which the process exited.
+exit $RC</command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers>
+    <hudson.tasks.junit.JUnitResultArchiver plugin="junit@1.2-beta-4">
+      <testResults>spec/reports/*.xml</testResults>
+      <keepLongStdio>false</keepLongStdio>
+      <testDataPublishers/>
+      <healthScaleFactor>1.0</healthScaleFactor>
+    </hudson.tasks.junit.JUnitResultArchiver>
+  </publishers>
+  <buildWrappers/>
+</project>
