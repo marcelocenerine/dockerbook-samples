@@ -1,0 +1,52 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+Vagrant.configure(2) do |config|
+  config.vm.box = "ubuntu/trusty64"
+  config.vm.provision :shell, path: "bootstrap.sh"
+
+  config.vm.define "consul1" do |consul1|
+    consul1.vm.network "private_network", ip: "172.28.128.3"
+    consul1.vm.hostname = "consul1"
+    consul1.vm.provision "shell", inline: <<-SHELL
+      docker run -d -h $HOSTNAME \
+      -p 8300:8300 -p 8301:8301 \
+      -p 8301:8301/udp -p 8302:8302 \
+      -p 8302:8302/udp -p 8400:8400 \
+      -p 8500:8500 -p 53:53/udp \
+      --name $HOSTNAME marcelocenerine/consul \
+      -server -advertise $PUBLIC_IP -bootstrap-expect 3
+    SHELL
+  end
+
+  config.vm.define "consul2" do |consul2|
+    consul2.vm.network "private_network", ip: "172.28.128.4"
+    consul2.vm.hostname = "consul2"
+    consul2.vm.provision "shell", inline: <<-SHELL
+      JOIN_IP=172.28.128.3
+
+      docker run -d -h $HOSTNAME \
+      -p 8300:8300 -p 8301:8301 \
+      -p 8301:8301/udp -p 8302:8302 \
+      -p 8302:8302/udp -p 8400:8400 \
+      -p 8500:8500 -p 53:53/udp \
+      --name $HOSTNAME marcelocenerine/consul \
+      -server -advertise $PUBLIC_IP -join $JOIN_IP
+    SHELL
+  end
+
+  config.vm.define "consul3" do |consul3|
+    consul3.vm.network "private_network", ip: "172.28.128.5"
+    consul3.vm.hostname = "consul3"
+    consul3.vm.provision "shell", inline: <<-SHELL
+      JOIN_IP=172.28.128.3
+
+      docker run -d -h $HOSTNAME \
+      -p 8300:8300 -p 8301:8301 \
+      -p 8301:8301/udp -p 8302:8302 \
+      -p 8302:8302/udp -p 8400:8400 \
+      -p 8500:8500 -p 53:53/udp \
+      --name $HOSTNAME marcelocenerine/consul \
+      -server -advertise $PUBLIC_IP -join $JOIN_IP
+    SHELL
+  end
+end
