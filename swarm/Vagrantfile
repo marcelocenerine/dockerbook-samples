@@ -1,0 +1,17 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+Vagrant.configure(2) do |config|
+  config.vm.box = "ubuntu/trusty64"
+  config.vm.provision :shell, path: "bootstrap.sh"
+
+  config.vm.define "docker1" do |docker1|
+    docker1.vm.network "private_network", type: "dhcp"
+    docker1.vm.hostname = "docker1"
+  end
+
+  config.vm.define "docker2" do |docker2|
+    docker2.vm.network "private_network", type: "dhcp"
+    docker2.vm.hostname = "docker2"
+  end
+end
+#https://docs.docker.com/swarm/install-manual/
